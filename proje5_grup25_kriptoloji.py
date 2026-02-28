@@ -1,99 +1,77 @@
 import customtkinter as ctk
+import base64
+import codecs
 
-# Temayı "Cyber" havasına sokalım
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
-class AraSurumKripto:
+class KriptoV22:
     def __init__(self, root):
         self.root = root
-        self.root.title("Jek the Rıpır - Lite Pro")
-        self.root.geometry("450x550")
+        self.root.title("Jek the Rıpır v2.2 - Pro Logic")
+        self.root.geometry("500x650")
         
-        # --- UI KURULUMU ---
-        # Başlık
-        self.label_baslik = ctk.CTkLabel(self.root, text="MODERN ŞİFRELEME", 
-                                        font=("Orbitron", 22, "bold"), 
-                                        text_color="#00ffcc")
-        self.label_baslik.pack(pady=20)
+        ctk.CTkLabel(self.root, text="KRİPTO İŞLEM MERKEZİ", font=("Courier New", 22, "bold"), text_color="#17a2b8").pack(pady=20)
 
-        # Giriş Alanı
-        self.giriş_kutusu = ctk.CTkEntry(self.root, placeholder_text="Metni buraya girin...", 
-                                         width=350, height=40)
+        self.giriş_kutusu = ctk.CTkTextbox(self.root, width=400, height=100, border_width=1)
         self.giriş_kutusu.pack(pady=10)
 
-        # Algoritma Seçici (Combo Box)
         self.algoritma_secici = ctk.CTkOptionMenu(self.root, 
-                                                  values=["Sezar (+3)", "Ters Çevir", "Base64", "XOR (123)"],
-                                                  button_color="#2b2b2b",
-                                                  fg_color="#333333")
-        self.algoritma_secici.pack(pady=15)
+            values=["Sezar (+3)", "XOR (123)", "Ters Çevir", "Base64", "ROT13", "Atbash", "Hex (Onaltılık)"])
+        self.algoritma_secici.pack(pady=10)
 
-        # Butonlar İçin Frame
-        self.btn_frame = ctk.CTkFrame(self.root, fg_color="transparent")
-        self.btn_frame.pack(pady=10)
+        # Çift Buton Yapısı
+        btn_frame = ctk.CTkFrame(self.root, fg_color="transparent")
+        btn_frame.pack(pady=15)
 
-        self.btn_sifrele = ctk.CTkButton(self.btn_frame, text="Şifrele", 
-                                         fg_color="#1f538d", hover_color="#14375e",
-                                         command=self.islem_sifrele, width=120)
+        self.btn_sifrele = ctk.CTkButton(btn_frame, text="ŞİFRELE", command=lambda: self.islem_yap("sifrele"), fg_color="#28a745")
         self.btn_sifrele.grid(row=0, column=0, padx=10)
 
-        self.btn_coz = ctk.CTkButton(self.btn_frame, text="Şifreyi Çöz", 
-                                      fg_color="#a83232", hover_color="#7a2424",
-                                      command=self.islem_coz, width=120)
+        self.btn_coz = ctk.CTkButton(btn_frame, text="ÇÖZ", command=lambda: self.islem_yap("coz"), fg_color="#dc3545")
         self.btn_coz.grid(row=0, column=1, padx=10)
 
-        # Sonuç Alanı
-        self.sonuc_label = ctk.CTkLabel(self.root, text="İŞLEM SONUCU", font=("Arial", 10, "bold"))
-        self.sonuc_label.pack(pady=(20, 0))
-
-        self.sonuc_kutusu = ctk.CTkTextbox(self.root, width=350, height=120, 
-                                           border_color="#00ffcc", border_width=1)
+        self.sonuc_kutusu = ctk.CTkTextbox(self.root, width=400, height=120, border_width=1, border_color="#17a2b8")
         self.sonuc_kutusu.pack(pady=10)
 
-    # --- MANTIK KISMI ---
-    def islem_sifrele(self):
-        metin = self.giriş_kutusu.get()
+    def islem_yap(self, mod):
+        ham_metin = self.giriş_kutusu.get("1.0", "end-1c")
         secim = self.algoritma_secici.get()
         sonuc = ""
 
-        if secim == "Sezar (+3)":
-            sonuc = "".join(chr(ord(c) + 3) for c in metin)
-        elif secim == "Ters Çevir":
-            sonuc = metin[::-1]
-        elif secim == "Base64":
-            import base64
-            sonuc = base64.b64encode(metin.encode()).decode()
-        elif secim == "XOR (123)":
-            sonuc = "".join(chr(ord(c) ^ 123) for c in metin)
+        match secim:
+            case "Sezar (+3)":
+                kaydirma = 3 if mod == "sifrele" else -3
+                sonuc = "".join(chr(ord(c) + kaydirma) for c in ham_metin)
+            case "XOR (123)":
+                sonuc = "".join(chr(ord(c) ^ 123) for c in ham_metin) # XOR her iki yönde aynıdır
+            case "Ters Çevir":
+                sonuc = ham_metin[::-1]
+            case "Base64":
+                try:
+                    if mod == "sifrele":
+                        sonuc = base64.b64encode(ham_metin.encode()).decode()
+                    else:
+                        sonuc = base64.b64decode(ham_metin.encode()).decode()
+                except: sonuc = "HATA: Geçersiz Base64 verisi!"
+            case "ROT13":
+                sonuc = codecs.encode(ham_metin, 'rot_13')
+            case "Atbash":
+                alfabe = "abcçdefgğhıijklmnoöprsştuüvyzABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ"
+                ters_alfabe = "zyvüutşsrpoönmlkjiıhğgfedçcbaZYVÜUTŞSRPOÖNMLKJİIĞGFEDÇCBA"
+                sonuc = ham_metin.translate(str.maketrans(alfabe, ters_alfabe))
+            case "Hex (Onaltılık)":
+                try:
+                    if mod == "sifrele":
+                        sonuc = ham_metin.encode().hex()
+                    else:
+                        sonuc = bytes.fromhex(ham_metin).decode()
+                except: sonuc = "HATA: Geçersiz Hex verisi!"
 
-        self.yazdir(sonuc)
-
-    def islem_coz(self):
-        metin = self.giriş_kutusu.get()
-        secim = self.algoritma_secici.get()
-        sonuc = ""
-
-        if secim == "Sezar (+3)":
-            sonuc = "".join(chr(ord(c) - 3) for c in metin)
-        elif secim == "Ters Çevir":
-            sonuc = metin[::-1]
-        elif secim == "Base64":
-            import base64
-            try:
-                sonuc = base64.b64decode(metin.encode()).decode()
-            except:
-                sonuc = "HATA: Geçersiz Base64 formatı!"
-        elif secim == "XOR (123)":
-            sonuc = "".join(chr(ord(c) ^ 123) for c in metin)
-
-        self.yazdir(sonuc)
-
-    def yazdir(self, metin):
         self.sonuc_kutusu.delete("1.0", "end")
-        self.sonuc_kutusu.insert("1.0", metin)
+        self.sonuc_kutusu.insert("1.0", sonuc)
 
 if __name__ == "__main__":
     app = ctk.CTk()
-    AraSurumKripto(app)
+    KriptoV22(app)
     app.mainloop()
+
