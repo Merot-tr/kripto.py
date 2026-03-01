@@ -6,33 +6,42 @@ import codecs
 class KriptoV23:
     def __init__(self, root):
         self.root = root
-        self.root.title("Jek the Rıpır v2.3 - File & Crypto")
-        self.root.geometry("550x700")
+        self.root.title("KRIPTO KASAP v2.3")
+        self.root.geometry("550x750") # Buton için boyutu azıcık büyüttüm
         
-        # Başlık ve Dosya Butonu
-        ctk.CTkLabel(self.root, text="DOSYA TABANLI KRİPTO", font=("Courier New", 22, "bold"), text_color="#6f42c1").pack(pady=15)
+        # Üst başlık kısmı
+        ctk.CTkLabel(self.root, text="KRİPTO KASAP", font=("Courier New", 22, "bold"), text_color="#6f42c1").pack(pady=15)
         
+        # Dosya seçme işini buradan yapıyoruz
         self.btn_dosya = ctk.CTkButton(self.root, text="📁 TXT DOSYASI SEÇ", command=self.dosya_oku, fg_color="#444", hover_color="#555")
         self.btn_dosya.pack(pady=5)
-
+        
+        # Giriş metni buraya yazılıyor veya dosyadan geliyor
         self.giriş_kutusu = ctk.CTkTextbox(self.root, width=450, height=120)
         self.giriş_kutusu.pack(pady=10)
 
+        # Şifreleme yöntemini buradan seçtiriyoruz
         self.algoritma_secici = ctk.CTkOptionMenu(self.root, 
             values=["Sezar (+3)", "XOR (123)", "Ters Çevir", "Base64", "ROT13", "Atbash", "Hex (Onaltılık)"],
-fg_color="#6f42c1", button_color="#5a32a3")
+            fg_color="#6f42c1", button_color="#5a32a3")
         self.algoritma_secici.pack(pady=10)
 
-        # İşlem Butonları
+        # Şifrele ve Çöz butonları yan yana dursun diye frame kullandım
         btn_frame = ctk.CTkFrame(self.root, fg_color="transparent")
         btn_frame.pack(pady=10)
 
         ctk.CTkButton(btn_frame, text="ŞİFRELE", command=lambda: self.islem_yap("sifrele"), fg_color="#28a745").grid(row=0, column=0, padx=10)
         ctk.CTkButton(btn_frame, text="ÇÖZ", command=lambda: self.islem_yap("coz"), fg_color="#dc3545").grid(row=0, column=1, padx=10)
 
+        # Çıktı buraya düşüyor
         self.sonuc_kutusu = ctk.CTkTextbox(self.root, width=450, height=120, border_color="#6f42c1", border_width=1)
         self.sonuc_kutusu.pack(pady=10)
 
+        # İstediğin kaydetme butonu burası
+        self.btn_kaydet = ctk.CTkButton(self.root, text="💾 SONUCU KAYDET", command=self.dosya_kaydet, fg_color="#007bff", hover_color="#0056b3")
+        self.btn_kaydet.pack(pady=10)
+
+    # Dışarıdan dosya içeriğini çekmek için
     def dosya_oku(self):
         yol = filedialog.askopenfilename(filetypes=[("Metin Dosyaları", "*.txt")])
         if yol:
@@ -40,8 +49,17 @@ fg_color="#6f42c1", button_color="#5a32a3")
                 self.giriş_kutusu.delete("1.0", "end")
                 self.giriş_kutusu.insert("1.0", f.read())
 
+    # Çıkan sonucu yeni bir txt olarak kaydeder
+    def dosya_kaydet(self):
+        icerik = self.sonuc_kutusu.get("1.0", "end-1c")
+        if icerik.strip():
+            dosya_yolu = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Metin Dosyaları", "*.txt")])
+            if dosya_yolu:
+                with open(dosya_yolu, "w", encoding="utf-8") as dosya:
+                    dosya.write(icerik)
+
+    # Ana motor burası, seçilen algoritmaya göre metni evirip çeviriyor
     def islem_yap(self, mod):
-        # Match-case mantığı v2.2 ile aynı, çözme özellikleri dahil
         ham_metin = self.giriş_kutusu.get("1.0", "end-1c")
         secim = self.algoritma_secici.get()
         sonuc = ""
@@ -51,6 +69,7 @@ fg_color="#6f42c1", button_color="#5a32a3")
                 k = 3 if mod == "sifrele" else -3
                 sonuc = "".join(chr(ord(c) + k) for c in ham_metin)
             case "XOR (123)":
+                # XOR simetrik olduğu için mod kontrolüne gerek yok
                 sonuc = "".join(chr(ord(c) ^ 123) for c in ham_metin)
             case "Ters Çevir":
                 sonuc = ham_metin[::-1]
@@ -69,6 +88,7 @@ fg_color="#6f42c1", button_color="#5a32a3")
                     sonuc = ham_metin.encode().hex() if mod == "sifrele" else bytes.fromhex(ham_metin).decode()
                 except: sonuc = "HATA!"
 
+        # Sonucu temizleyip yeni haliyle kutuya yazdırıyoruz
         self.sonuc_kutusu.delete("1.0", "end")
         self.sonuc_kutusu.insert("1.0", sonuc)
 
